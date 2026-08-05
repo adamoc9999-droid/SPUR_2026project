@@ -65,6 +65,10 @@ html,body{font-family:var(--sans);color:var(--ink);-webkit-print-color-adjust:ex
   padding:6mm 7mm;display:grid;grid-template-columns:repeat(6,1fr);gap:6mm;box-shadow:0 2px 8px rgba(0,0,0,.04);}
 .kband-4{grid-template-columns:repeat(4,1fr);}
 .kband-3{grid-template-columns:repeat(3,1fr);}
+.kband-6{grid-template-columns:repeat(6,1fr);}
+.kband-6 .kchip-num{font-size:17pt;}
+.kband-6 .kchip-lab{font-size:8.2pt;line-height:1.25;}
+.kband-6 .kchip-sub{font-size:7.5pt;}
 
 /* theme-mix bars */
 .mixbox{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:5mm 7mm;box-shadow:0 2px 8px rgba(0,0,0,.04);}
@@ -104,12 +108,17 @@ html,body{font-family:var(--sans);color:var(--ink);-webkit-print-color-adjust:ex
 /* full-page sankey */
 .page-publishing .chart-sankey img{max-height:200mm;width:auto;max-width:100%;margin:0 auto;}
 
-/* SciBERT topics page — one tall chart + chips */
-.page-topics .stack{justify-content:flex-start;gap:4mm;min-height:0;}
+/* SciBERT topics page — chart + brief + chips */
+.page-topics .stack{justify-content:flex-start;gap:3.5mm;min-height:0;}
 .page-topics .chart-scibert{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
-.page-topics .chart-scibert img{flex:1 1 auto;width:100%;max-height:210mm;object-fit:contain;
+.page-topics .chart-scibert img{flex:1 1 auto;width:100%;max-height:168mm;object-fit:contain;
   object-position:top center;}
 .page-topics .chart-cap{font-size:8.8pt;}
+.page-topics .topics-brief{background:var(--card);border:1px solid var(--rule);border-radius:6px;
+  padding:4.5mm 7mm;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.page-topics .topics-brief .brief-row{grid-template-columns:28mm 22mm 1fr;}
+.page-topics .topics-brief .brief-txt{white-space:normal;overflow:visible;text-overflow:unset;
+  line-height:1.35;}
 
 /* theme legend */
 .theme-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 2px 0;}
@@ -309,9 +318,31 @@ body{background:#e6ddc9;padding:24px 0;}.web-wrap{max-width:820px;margin:0 auto;
         text; it reads each paper's title and abstract and assigns a single subject
         label. The largest label here is Electrical and Electronic Engineering at 13.3% of the corpus.</p>
       </div>
-      <div class="kband kband-4">
+      <div class="topics-brief">
+        <div class="brief-head">Also in the data</div>
+        <div class="brief-rows">
+          <div class="brief-row">
+            <span class="brief-tag">Concentration</span>
+            <span class="brief-val">7 topics</span>
+            <span class="brief-txt">account for half of all labelled papers</span>
+          </div>
+          <div class="brief-row">
+            <span class="brief-tag">Long tail</span>
+            <span class="brief-val">41 topics</span>
+            <span class="brief-txt">appear on only one paper in the corpus</span>
+          </div>
+          <div class="brief-row">
+            <span class="brief-tag">Beyond the chart</span>
+            <span class="brief-val">29%</span>
+            <span class="brief-txt">of papers sit in the 107 topics not shown above</span>
+          </div>
+        </div>
+      </div>
+      <div class="kband kband-6">
         <div class="kchip"><div class="kchip-num">13.3%</div><div class="kchip-lab">largest topic</div><div class="kchip-sub">Electrical and Electronic Engineeri…</div></div>
         <div class="kchip"><div class="kchip-num">71%</div><div class="kchip-lab">covered by top 15</div></div>
+        <div class="kchip"><div class="kchip-num">7</div><div class="kchip-lab">topics → half the corpus</div></div>
+        <div class="kchip"><div class="kchip-num">41</div><div class="kchip-lab">one-paper topics</div></div>
         <div class="kchip"><div class="kchip-num">122</div><div class="kchip-lab">distinct SciBERT topics</div></div>
         <div class="kchip"><div class="kchip-num">1,328</div><div class="kchip-lab">papers labelled</div></div>
       </div>
