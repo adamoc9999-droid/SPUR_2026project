@@ -116,7 +116,8 @@ html,body{font-family:var(--sans);color:var(--ink);-webkit-print-color-adjust:ex
 .page-topics .chart-cap{font-size:8.8pt;}
 .page-topics .topics-brief{background:var(--card);border:1px solid var(--rule);border-radius:6px;
   padding:4.5mm 7mm;box-shadow:0 2px 8px rgba(0,0,0,.04);}
-.page-topics .topics-brief .brief-row{grid-template-columns:28mm 22mm 1fr;}
+.page-topics .topics-brief .brief-row{grid-template-columns:max-content max-content 1fr;gap:6px 10px;align-items:baseline;}
+.page-topics .topics-brief .brief-tag{letter-spacing:.06em;}
 .page-topics .topics-brief .brief-txt{white-space:normal;overflow:visible;text-overflow:unset;
   line-height:1.35;}
 
@@ -202,7 +203,7 @@ body{background:#e6ddc9;padding:24px 0;}.web-wrap{max-width:820px;margin:0 auto;
       <h1 class="cover-title">Hamilton Institute research<br>in a nutshell</h1>
       <p class="cover-lede">1,328 open-access papers from 143 contributors
       across 6 research fields. Covers annual output, active members,
-      main themes, fine-grained topics, Flesch&ndash;Kincaid reading grade on prose,
+      main themes, fine-grained topics, Flesch&ndash;Kincaid reading grade,
       and citations from OpenAlex.</p>
       <div class="cover-index">
         <div class="idx-row"><span class="idx-no">01</span><span class="idx-txt">Output &amp; growth — papers and active members, year by year</span></div>
