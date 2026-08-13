@@ -1,1 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hamilton co-authorship chord diagram</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px 20px 32px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+      color: #1e3a5f;
+    }
+    .subtitle {
+      margin: 0 0 18px;
+      font-size: 0.92rem;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      padding: 12px;
+      position: relative;
+    }
+    #chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      background: rgba(15, 23, 42, 0.94);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 280px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+      transition: opacity 0.12s ease;
+      z-index: 20;
+    }
+    #tooltip strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #f8fafc;
+    }
+    .hint {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 16px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: #334155;
+    }
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Hamilton co-authorship chord diagram</h1>
+    <p class="subtitle">Top 10 connected Hamilton authors · 2001–2025 · 68 partnerships shown · hover a ribbon or author arc for details</p>
+    <div class="panel" id="panel">
+      <svg id="chart" viewBox="0 0 720 720" role="img"
+           aria-label="Interactive chord diagram of Hamilton co-authorships"></svg>
+      <div id="tooltip"></div>
+    </div>
+    <p class="hint">Hover a coloured ribbon to highlight one partnership and its joint-paper count. Hover an outer arc to highlight every connection for that author.</p>
+    <div class="legend" id="legend"></div>
+  </div>
+  <script>
+    const DATA = {"matrix": [[0, 0, 1, 9, 1, 1, 1, 0, 0, 1], [0, 0, 14, 0, 0, 0, 0, 15, 0, 0], [0, 0, 0, 0, 0, 0, 0, 2, 10, 1], [0, 0, 0, 0, 1, 0, 4, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 6], [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "meta": [{"label": "D. Malone", "full": "David Malone", "coauthors": 29, "papers": 112, "color": "#e11d48"}, {"label": "R. Shorten", "full": "Robert Shorten", "coauthors": 15, "papers": 98, "color": "#ea580c"}, {"label": "O. Mason", "full": "Oliver Mason", "coauthors": 15, "papers": 73, "color": "#ca8a04"}, {"label": "K. Duffy", "full": "Ken Duffy", "coauthors": 14, "papers": 137, "color": "#059669"}, {"label": "A. Parnell", "full": "Andrew Parnell", "coauthors": 14, "papers": 96, "color": "#0891b2"}, {"label": "B. Pearlmutter", "full": "Barak Pearlmutter", "coauthors": 7, "papers": 72, "color": "#2563eb"}, {"label": "V. Subramanian", "full": "Vijay Subramanian", "coauthors": 5, "papers": 28, "color": "#7c3aed"}, {"label": "W. Griggs", "full": "Wynita Griggs", "coauthors": 5, "papers": 21, "color": "#db2777"}, {"label": "M. Verwoerd", "full": "Mark Verwoerd", "coauthors": 4, "papers": 14, "color": "#65a30d"}, {"label": "N. McJames", "full": "Nathan McJames", "coauthors": 4, "papers": 7, "color": "#0d9488"}]};
+    const width = 720;
+    const height = 720;
+    const innerRadius = 240;
+    const outerRadius = 272;
+    const svg = d3.select("#chart");
+    const panel = document.getElementById("panel");
+    const tooltip = document.getElementById("tooltip");
+    const legend = document.getElementById("legend");
+    const g = svg.append("g")
+      .attr("transform", `translate(${width / 2},${height / 2})`);
 
+    const matrix = DATA.matrix;
+    const meta = DATA.meta;
+    const colors = meta.map(d => d.color);
+
+    const chords = d3.chord()
+      .padAngle(0.045)
+      .sortSubgroups(d3.descending)(matrix);
+
+    const arc = d3.arc()
+      .innerRadius(innerRadius)
+      .outerRadius(outerRadius);
+
+    const ribbon = d3.ribbon()
+      .radius(innerRadius - 1)
+      .padAngle(0.02);
+
+    const arcGroup = g.append("g").attr("class", "arcs");
+    const ribbonGroup = g.append("g").attr("class", "ribbons");
+
+    const arcs = arcGroup.selectAll("path")
+      .data(chords.groups)
+      .join("path")
+      .attr("fill", d => colors[d.index])
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 2)
+      .attr("d", arc)
+      .style("cursor", "pointer")
+      .on("mouseover", (event, d) => highlightArc(d.index, event))
+      .on("mousemove", moveTooltip)
+      .on("mouseout", resetHighlight);
+
+    const ribbons = ribbonGroup.selectAll("path")
+      .data(chords)
+      .join("path")
+      .attr("fill", d => colors[d.source.index])
+      .attr("opacity", 0.72)
+      .attr("d", ribbon)
+      .style("cursor", "pointer")
+      .on("mouseover", (event, d) => highlightRibbon(d, event))
+      .on("mousemove", moveTooltip)
+      .on("mouseout", resetHighlight);
+
+    arcs.append("title").text(d =>
+      `${meta[d.index].full}\n${meta[d.index].coauthors} unique co-authors · ${meta[d.index].papers} papers`
+    );
+
+    ribbons.append("title").text(d => {
+      const a = meta[d.source.index].label;
+      const b = meta[d.target.index].label;
+      const n = matrix[d.source.index][d.target.index];
+      return `${a} ↔ ${b}: ${n} joint paper${n === 1 ? "" : "s"}`;
+    });
+
+    const labels = arcGroup.selectAll("text")
+      .data(chords.groups)
+      .join("text")
+      .attr("dy", "0.35em")
+      .attr("transform", d => {
+        const angle = (d.startAngle + d.endAngle) / 2 * 180 / Math.PI - 90;
+        const rotate = angle > 90 ? 180 : 0;
+        return `rotate(${angle}) translate(${outerRadius + 14}) rotate(${rotate})`;
+      })
+      .attr("text-anchor", d => {
+        const angle = (d.startAngle + d.endAngle) / 2;
+        return angle > Math.PI ? "end" : "start";
+      })
+      .attr("font-size", 12)
+      .attr("font-weight", 700)
+      .attr("fill", "#1e3a5f")
+      .text(d => meta[d.index].label);
+
+    meta.forEach(item => {
+      const el = document.createElement("div");
+      el.className = "legend-item";
+      el.innerHTML = `<span class="swatch" style="background:${item.color}"></span>${item.label}`;
+      legend.appendChild(el);
+    });
+
+    function moveTooltip(event) {
+      const rect = panel.getBoundingClientRect();
+      tooltip.style.left = `${event.clientX - rect.left + 14}px`;
+      tooltip.style.top = `${event.clientY - rect.top - 10}px`;
+    }
+
+    function showTooltip(html) {
+      tooltip.innerHTML = html;
+      tooltip.style.opacity = "1";
+    }
+
+    function hideTooltip() {
+      tooltip.style.opacity = "0";
+    }
+
+    function highlightRibbon(d, event) {
+      ribbons
+        .attr("opacity", r =>
+          (r.source.index === d.source.index && r.target.index === d.target.index) ||
+          (r.source.index === d.target.index && r.target.index === d.source.index)
+            ? 0.95 : 0.07)
+        .attr("stroke", r =>
+          (r.source.index === d.source.index && r.target.index === d.target.index) ||
+          (r.source.index === d.target.index && r.target.index === d.source.index)
+            ? "#0f172a" : "none")
+        .attr("stroke-width", r =>
+          (r.source.index === d.source.index && r.target.index === d.target.index) ||
+          (r.source.index === d.target.index && r.target.index === d.source.index)
+            ? 1.2 : 0);
+      arcs.attr("opacity", a =>
+        a.index === d.source.index || a.index === d.target.index ? 1 : 0.28);
+      const count = matrix[d.source.index][d.target.index] ||
+        matrix[d.target.index][d.source.index];
+      showTooltip(
+        `<strong>${meta[d.source.index].label} ↔ ${meta[d.target.index].label}</strong>` +
+        `${count} joint Hamilton paper${count === 1 ? "" : "s"}<br>` +
+        `${meta[d.source.index].full} · ${meta[d.target.index].full}`
+      );
+      moveTooltip(event);
+    }
+
+    function highlightArc(index, event) {
+      ribbons
+        .attr("opacity", r => r.source.index === index || r.target.index === index ? 0.9 : 0.06)
+        .attr("stroke", "none");
+      arcs.attr("opacity", a => a.index === index ? 1 : 0.25);
+      const item = meta[index];
+      showTooltip(
+        `<strong>${item.label}</strong>` +
+        `${item.coauthors} unique Hamilton co-authors<br>` +
+        `${item.papers} papers total<br>` +
+        `${item.full}`
+      );
+      moveTooltip(event);
+    }
+
+    function resetHighlight() {
+      ribbons.attr("opacity", 0.72).attr("stroke", "none");
+      arcs.attr("opacity", 1);
+      hideTooltip();
+    }
+  </script>
+</body>
+</html>
