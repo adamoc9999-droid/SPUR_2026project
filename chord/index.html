@@ -87,22 +87,35 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
+    .chord-label {
+      font-size: 12px;
+      font-weight: 700;
+      fill: #1e3a5f;
+    }
+    @media (max-width: 640px) {
+      .page { padding: 14px 12px 22px; }
+      h1 { font-size: 1.18rem; }
+      .subtitle, .hint { font-size: 0.82rem; }
+      .panel { padding: 6px; }
+      .chord-label { font-size: 20px; }
+      #tooltip { font-size: 12px; max-width: min(260px, 78vw); }
+    }
   </style>
 </head>
 <body>
   <div class="page">
     <h1>Hamilton co-authorship chord diagram</h1>
-    <p class="subtitle">Top 10 connected Hamilton authors · 2001–2025 · 68 partnerships shown · hover a ribbon or author arc for details</p>
+    <p class="subtitle">Top 10 connected Hamilton authors · 2001–2025 · 95 partnerships shown · tap or hover a ribbon or author arc for details</p>
     <div class="panel" id="panel">
       <svg id="chart" viewBox="0 0 720 720" role="img"
            aria-label="Interactive chord diagram of Hamilton co-authorships"></svg>
       <div id="tooltip"></div>
     </div>
-    <p class="hint">Hover a coloured ribbon to highlight one partnership and its joint-paper count. Hover an outer arc to highlight every connection for that author.</p>
+    <p class="hint">Tap or hover a coloured ribbon to highlight one partnership and its joint-paper count. Tap or hover an outer arc to highlight every connection for that author.</p>
     <div class="legend" id="legend"></div>
   </div>
   <script>
-    const DATA = {"matrix": [[0, 0, 1, 9, 1, 1, 1, 0, 0, 1], [0, 0, 14, 0, 0, 0, 0, 15, 0, 0], [0, 0, 0, 0, 0, 0, 0, 2, 10, 1], [0, 0, 0, 0, 1, 0, 4, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 6], [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "meta": [{"label": "D. Malone", "full": "David Malone", "coauthors": 29, "papers": 112, "color": "#e11d48"}, {"label": "R. Shorten", "full": "Robert Shorten", "coauthors": 15, "papers": 98, "color": "#ea580c"}, {"label": "O. Mason", "full": "Oliver Mason", "coauthors": 15, "papers": 73, "color": "#ca8a04"}, {"label": "K. Duffy", "full": "Ken Duffy", "coauthors": 14, "papers": 137, "color": "#059669"}, {"label": "A. Parnell", "full": "Andrew Parnell", "coauthors": 14, "papers": 96, "color": "#0891b2"}, {"label": "B. Pearlmutter", "full": "Barak Pearlmutter", "coauthors": 7, "papers": 72, "color": "#2563eb"}, {"label": "V. Subramanian", "full": "Vijay Subramanian", "coauthors": 5, "papers": 28, "color": "#7c3aed"}, {"label": "W. Griggs", "full": "Wynita Griggs", "coauthors": 5, "papers": 21, "color": "#db2777"}, {"label": "M. Verwoerd", "full": "Mark Verwoerd", "coauthors": 4, "papers": 14, "color": "#65a30d"}, {"label": "N. McJames", "full": "Nathan McJames", "coauthors": 4, "papers": 7, "color": "#0d9488"}]};
+    const DATA = {"matrix": [[0, 14, 0, 1, 9, 1, 1, 0, 1, 0], [0, 0, 8, 2, 5, 0, 0, 1, 13, 0], [0, 0, 0, 14, 0, 0, 0, 1, 0, 15], [0, 0, 0, 0, 0, 0, 0, 1, 0, 2], [0, 0, 0, 0, 0, 1, 0, 0, 4, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "meta": [{"label": "D. Malone", "full": "David Malone", "coauthors": 29, "papers": 112, "color": "#e11d48"}, {"label": "D. Leith", "full": "Doug Leith", "coauthors": 21, "papers": 65, "color": "#ea580c"}, {"label": "R. Shorten", "full": "Robert Shorten", "coauthors": 17, "papers": 98, "color": "#ca8a04"}, {"label": "O. Mason", "full": "Oliver Mason", "coauthors": 17, "papers": 73, "color": "#059669"}, {"label": "K. Duffy", "full": "Ken Duffy", "coauthors": 14, "papers": 137, "color": "#0891b2"}, {"label": "A. Parnell", "full": "Andrew Parnell", "coauthors": 14, "papers": 96, "color": "#2563eb"}, {"label": "B. Pearlmutter", "full": "Barak Pearlmutter", "coauthors": 8, "papers": 72, "color": "#7c3aed"}, {"label": "P. Wellstead", "full": "Peter Wellstead", "coauthors": 8, "papers": 38, "color": "#db2777"}, {"label": "V. Subramanian", "full": "Vijay Subramanian", "coauthors": 6, "papers": 28, "color": "#65a30d"}, {"label": "W. Griggs", "full": "Wynita Griggs", "coauthors": 5, "papers": 21, "color": "#0d9488"}]};
     const width = 720;
     const height = 720;
     const innerRadius = 240;
@@ -133,6 +146,28 @@
     const arcGroup = g.append("g").attr("class", "arcs");
     const ribbonGroup = g.append("g").attr("class", "ribbons");
 
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    let sticky = null;
+
+    function bindPointer(selection, keyFn, onEnter) {
+      selection
+        .on("pointerenter", (event, d) => { if (!coarse) onEnter(event, d); })
+        .on("pointermove", (event, d) => { if (!coarse) { onEnter(event, d); moveTooltip(event); } })
+        .on("pointerleave", () => { if (!coarse) resetHighlight(); })
+        .on("pointerup", (event, d) => {
+          if (!coarse) return;
+          event.stopPropagation();
+          const key = keyFn(d);
+          if (sticky === key) {
+            resetHighlight();
+            sticky = null;
+            return;
+          }
+          sticky = key;
+          onEnter(event, d);
+        });
+    }
+
     const arcs = arcGroup.selectAll("path")
       .data(chords.groups)
       .join("path")
@@ -140,10 +175,8 @@
       .attr("stroke", "#fff")
       .attr("stroke-width", 2)
       .attr("d", arc)
-      .style("cursor", "pointer")
-      .on("mouseover", (event, d) => highlightArc(d.index, event))
-      .on("mousemove", moveTooltip)
-      .on("mouseout", resetHighlight);
+      .style("cursor", "pointer");
+    bindPointer(arcs, d => "a" + d.index, (event, d) => highlightArc(d.index, event));
 
     const ribbons = ribbonGroup.selectAll("path")
       .data(chords)
@@ -151,10 +184,12 @@
       .attr("fill", d => colors[d.source.index])
       .attr("opacity", 0.72)
       .attr("d", ribbon)
-      .style("cursor", "pointer")
-      .on("mouseover", (event, d) => highlightRibbon(d, event))
-      .on("mousemove", moveTooltip)
-      .on("mouseout", resetHighlight);
+      .style("cursor", "pointer");
+    bindPointer(
+      ribbons,
+      d => "r" + d.source.index + "-" + d.target.index,
+      (event, d) => highlightRibbon(d, event)
+    );
 
     arcs.append("title").text(d =>
       `${meta[d.index].full}\n${meta[d.index].coauthors} unique co-authors · ${meta[d.index].papers} papers`
@@ -170,6 +205,7 @@
     const labels = arcGroup.selectAll("text")
       .data(chords.groups)
       .join("text")
+      .attr("class", "chord-label")
       .attr("dy", "0.35em")
       .attr("transform", d => {
         const angle = (d.startAngle + d.endAngle) / 2 * 180 / Math.PI - 90;
@@ -180,9 +216,6 @@
         const angle = (d.startAngle + d.endAngle) / 2;
         return angle > Math.PI ? "end" : "start";
       })
-      .attr("font-size", 12)
-      .attr("font-weight", 700)
-      .attr("fill", "#1e3a5f")
       .text(d => meta[d.index].label);
 
     meta.forEach(item => {
@@ -253,6 +286,13 @@
       arcs.attr("opacity", 1);
       hideTooltip();
     }
+
+    document.addEventListener("pointerup", (event) => {
+      if (!coarse || !sticky) return;
+      if (panel.contains(event.target)) return;
+      resetHighlight();
+      sticky = null;
+    });
   </script>
 </body>
 </html>
