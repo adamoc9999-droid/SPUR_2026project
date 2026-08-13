@@ -1,1 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hamilton authors → publishers</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 20px 32px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+      color: #1e3a5f;
+    }
+    .subtitle {
+      margin: 0 0 18px;
+      font-size: 0.92rem;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      padding: 12px;
+      position: relative;
+      overflow-x: auto;
+    }
+    #chart {
+      width: 100%;
+      min-width: 920px;
+      height: auto;
+      display: block;
+    }
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      background: rgba(15, 23, 42, 0.94);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 300px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+      transition: opacity 0.12s ease;
+      z-index: 20;
+    }
+    #tooltip strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #f8fafc;
+    }
+    .hint {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 16px;
+    }
+    .legend-block {
+      width: 100%;
+      margin-top: 4px;
+    }
+    .legend-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: #334155;
+      margin-right: 10px;
+      margin-bottom: 6px;
+    }
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .node-label {
+      font-size: 11px;
+      fill: #1e293b;
+      pointer-events: none;
+    }
+    .link {
+      fill: none;
+      stroke-opacity: 0.42;
+      transition: stroke-opacity 0.12s ease;
+    }
+    .link.dim {
+      stroke-opacity: 0.06;
+    }
+    .link.active {
+      stroke-opacity: 0.78;
+    }
+    .node rect {
+      cursor: pointer;
+      transition: opacity 0.12s ease;
+    }
+    .node.dim rect {
+      opacity: 0.25;
+    }
+    .node.dim text {
+      opacity: 0.35;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Where Hamilton authors publish most</h1>
+    <p class="subtitle">Top 20 Hamilton authors by paper count · top 10 publishers (+ Other / unlisted) · 2001–2025 · 1101 paper–author links · publisher inferred from DOI · arXiv preprints excluded as a publisher</p>
+    <div class="panel" id="panel">
+      <svg id="chart" viewBox="0 0 1120 900" role="img"
+           aria-label="Sankey diagram linking Hamilton authors to publishers"></svg>
+      <div id="tooltip"></div>
+    </div>
+    <p class="hint">Hover a flow or node to highlight that author&ndash;publisher link. Flow width = number of papers.</p>
+    <div class="legend" id="legend"></div>
+  </div>
+  <script>
+    const DATA = {"nodes": [{"id": "a:Ken Duffy", "name": "K. Duffy", "full": "Ken Duffy", "category": "author", "papers": 137, "color": "#e11d48"}, {"id": "a:David Malone", "name": "D. Malone", "full": "David Malone", "category": "author", "papers": 112, "color": "#ea580c"}, {"id": "a:Robert Shorten", "name": "R. Shorten", "full": "Robert Shorten", "category": "author", "papers": 98, "color": "#ca8a04"}, {"id": "a:Andrew Parnell", "name": "A. Parnell", "full": "Andrew Parnell", "category": "author", "papers": 96, "color": "#059669"}, {"id": "a:Erivelton Nepomuceno", "name": "E. Nepomuceno", "full": "Erivelton Nepomuceno", "category": "author", "papers": 78, "color": "#0891b2"}, {"id": "a:Oliver Mason", "name": "O. Mason", "full": "Oliver Mason", "category": "author", "papers": 73, "color": "#2563eb"}, {"id": "a:Barak Pearlmutter", "name": "B. Pearlmutter", "full": "Barak Pearlmutter", "category": "author", "papers": 72, "color": "#7c3aed"}, {"id": "a:Doug Leith", "name": "D. Leith", "full": "Doug Leith", "category": "author", "papers": 65, "color": "#db2777"}, {"id": "a:Tomas Ward", "name": "T. Ward", "full": "Tomas Ward", "category": "author", "papers": 59, "color": "#65a30d"}, {"id": "a:Elisa Fadda", "name": "E. Fadda", "full": "Elisa Fadda", "category": "author", "papers": 55, "color": "#0d9488"}, {"id": "a:James F. Power", "name": "J. Power", "full": "James F. Power", "category": "author", "papers": 55, "color": "#c026d3"}, {"id": "a:Peter Wellstead", "name": "P. Wellstead", "full": "Peter Wellstead", "category": "author", "papers": 38, "color": "#4f46e5"}, {"id": "a:Vicenç Torra", "name": "V. Torra", "full": "Vicenç Torra", "category": "author", "papers": 28, "color": "#dc2626"}, {"id": "a:Vijay Subramanian", "name": "V. Subramanian", "full": "Vijay Subramanian", "category": "author", "papers": 28, "color": "#d97706"}, {"id": "a:Subhrakanti Dey", "name": "S. Dey", "full": "Subhrakanti Dey", "category": "author", "papers": 21, "color": "#16a34a"}, {"id": "a:Wynita Griggs", "name": "W. Griggs", "full": "Wynita Griggs", "category": "author", "papers": 21, "color": "#e11d48"}, {"id": "a:Fiona Lyddy", "name": "F. Lyddy", "full": "Fiona Lyddy", "category": "author", "papers": 18, "color": "#ea580c"}, {"id": "a:Arman Farhang", "name": "A. Farhang", "full": "Arman Farhang", "category": "author", "papers": 16, "color": "#ca8a04"}, {"id": "a:Selim Solmaz", "name": "S. Solmaz", "full": "Selim Solmaz", "category": "author", "papers": 16, "color": "#059669"}, {"id": "a:Damien Woods", "name": "D. Woods", "full": "Damien Woods", "category": "author", "papers": 15, "color": "#0891b2"}, {"id": "p:IEEE", "name": "IEEE", "full": "IEEE", "category": "publisher", "papers": 351, "color": "#00629B"}, {"id": "p:Other / unlisted", "name": "Other / unlisted", "full": "Other / unlisted", "category": "publisher", "papers": 305, "color": "#94a3b8"}, {"id": "p:Elsevier", "name": "Elsevier", "full": "Elsevier", "category": "publisher", "papers": 165, "color": "#FF6C00"}, {"id": "p:Springer", "name": "Springer", "full": "Springer", "category": "publisher", "papers": 122, "color": "#1a472a"}, {"id": "p:ACM", "name": "ACM", "full": "ACM", "category": "publisher", "papers": 44, "color": "#0085CF"}, {"id": "p:Wiley", "name": "Wiley", "full": "Wiley", "category": "publisher", "papers": 37, "color": "#585858"}, {"id": "p:Taylor & Francis", "name": "Taylor & Francis", "full": "Taylor & Francis", "category": "publisher", "papers": 26, "color": "#005a8c"}, {"id": "p:Zenodo", "name": "Zenodo", "full": "Zenodo", "category": "publisher", "papers": 14, "color": "#64748b"}, {"id": "p:MDPI", "name": "MDPI", "full": "MDPI", "category": "publisher", "papers": 13, "color": "#64748b"}, {"id": "p:PLOS", "name": "PLOS", "full": "PLOS", "category": "publisher", "papers": 13, "color": "#0072bc"}, {"id": "p:Nature", "name": "Nature", "full": "Nature", "category": "publisher", "papers": 11, "color": "#c03d3d"}], "links": [{"source": 1, "target": 20, "value": 56, "author": "David Malone", "author_short": "D. Malone", "publisher": "IEEE"}, {"source": 0, "target": 20, "value": 53, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "IEEE"}, {"source": 3, "target": 21, "value": 46, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "Other / unlisted"}, {"source": 7, "target": 20, "value": 45, "author": "Doug Leith", "author_short": "D. Leith", "publisher": "IEEE"}, {"source": 0, "target": 21, "value": 43, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "Other / unlisted"}, {"source": 4, "target": 20, "value": 42, "author": "Erivelton Nepomuceno", "author_short": "E. Nepomuceno", "publisher": "IEEE"}, {"source": 2, "target": 20, "value": 40, "author": "Robert Shorten", "author_short": "R. Shorten", "publisher": "IEEE"}, {"source": 5, "target": 22, "value": 37, "author": "Oliver Mason", "author_short": "O. Mason", "publisher": "Elsevier"}, {"source": 9, "target": 21, "value": 30, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "Other / unlisted"}, {"source": 6, "target": 21, "value": 27, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "Other / unlisted"}, {"source": 8, "target": 20, "value": 23, "author": "Tomas Ward", "author_short": "T. Ward", "publisher": "IEEE"}, {"source": 13, "target": 20, "value": 22, "author": "Vijay Subramanian", "author_short": "V. Subramanian", "publisher": "IEEE"}, {"source": 1, "target": 21, "value": 21, "author": "David Malone", "author_short": "D. Malone", "publisher": "Other / unlisted"}, {"source": 0, "target": 22, "value": 21, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "Elsevier"}, {"source": 11, "target": 21, "value": 19, "author": "Peter Wellstead", "author_short": "P. Wellstead", "publisher": "Other / unlisted"}, {"source": 2, "target": 22, "value": 19, "author": "Robert Shorten", "author_short": "R. Shorten", "publisher": "Elsevier"}, {"source": 10, "target": 21, "value": 18, "author": "James F. Power", "author_short": "J. Power", "publisher": "Other / unlisted"}, {"source": 8, "target": 21, "value": 18, "author": "Tomas Ward", "author_short": "T. Ward", "publisher": "Other / unlisted"}, {"source": 12, "target": 23, "value": 18, "author": "Vicenç Torra", "author_short": "V. Torra", "publisher": "Springer"}, {"source": 5, "target": 21, "value": 17, "author": "Oliver Mason", "author_short": "O. Mason", "publisher": "Other / unlisted"}, {"source": 3, "target": 22, "value": 16, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "Elsevier"}, {"source": 4, "target": 21, "value": 16, "author": "Erivelton Nepomuceno", "author_short": "E. Nepomuceno", "publisher": "Other / unlisted"}, {"source": 1, "target": 23, "value": 15, "author": "David Malone", "author_short": "D. Malone", "publisher": "Springer"}, {"source": 6, "target": 20, "value": 14, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "IEEE"}, {"source": 2, "target": 21, "value": 14, "author": "Robert Shorten", "author_short": "R. Shorten", "publisher": "Other / unlisted"}, {"source": 17, "target": 20, "value": 13, "author": "Arman Farhang", "author_short": "A. Farhang", "publisher": "IEEE"}, {"source": 9, "target": 22, "value": 13, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "Elsevier"}, {"source": 10, "target": 24, "value": 13, "author": "James F. Power", "author_short": "J. Power", "publisher": "ACM"}, {"source": 6, "target": 23, "value": 12, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "Springer"}, {"source": 14, "target": 20, "value": 11, "author": "Subhrakanti Dey", "author_short": "S. Dey", "publisher": "IEEE"}, {"source": 1, "target": 24, "value": 10, "author": "David Malone", "author_short": "D. Malone", "publisher": "ACM"}, {"source": 4, "target": 22, "value": 10, "author": "Erivelton Nepomuceno", "author_short": "E. Nepomuceno", "publisher": "Elsevier"}, {"source": 7, "target": 23, "value": 9, "author": "Doug Leith", "author_short": "D. Leith", "publisher": "Springer"}, {"source": 10, "target": 23, "value": 9, "author": "James F. Power", "author_short": "J. Power", "publisher": "Springer"}, {"source": 0, "target": 23, "value": 9, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "Springer"}, {"source": 15, "target": 20, "value": 9, "author": "Wynita Griggs", "author_short": "W. Griggs", "publisher": "IEEE"}, {"source": 16, "target": 21, "value": 8, "author": "Fiona Lyddy", "author_short": "F. Lyddy", "publisher": "Other / unlisted"}, {"source": 5, "target": 20, "value": 8, "author": "Oliver Mason", "author_short": "O. Mason", "publisher": "IEEE"}, {"source": 5, "target": 23, "value": 8, "author": "Oliver Mason", "author_short": "O. Mason", "publisher": "Springer"}, {"source": 11, "target": 23, "value": 8, "author": "Peter Wellstead", "author_short": "P. Wellstead", "publisher": "Springer"}, {"source": 2, "target": 23, "value": 8, "author": "Robert Shorten", "author_short": "R. Shorten", "publisher": "Springer"}, {"source": 19, "target": 21, "value": 7, "author": "Damien Woods", "author_short": "D. Woods", "publisher": "Other / unlisted"}, {"source": 2, "target": 26, "value": 7, "author": "Robert Shorten", "author_short": "R. Shorten", "publisher": "Taylor & Francis"}, {"source": 2, "target": 25, "value": 7, "author": "Robert Shorten", "author_short": "R. Shorten", "publisher": "Wiley"}, {"source": 3, "target": 23, "value": 6, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "Springer"}, {"source": 3, "target": 27, "value": 6, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "Zenodo"}, {"source": 6, "target": 24, "value": 6, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "ACM"}, {"source": 4, "target": 28, "value": 6, "author": "Erivelton Nepomuceno", "author_short": "E. Nepomuceno", "publisher": "MDPI"}, {"source": 16, "target": 26, "value": 6, "author": "Fiona Lyddy", "author_short": "F. Lyddy", "publisher": "Taylor & Francis"}, {"source": 10, "target": 22, "value": 6, "author": "James F. Power", "author_short": "J. Power", "publisher": "Elsevier"}, {"source": 14, "target": 22, "value": 6, "author": "Subhrakanti Dey", "author_short": "S. Dey", "publisher": "Elsevier"}, {"source": 8, "target": 24, "value": 6, "author": "Tomas Ward", "author_short": "T. Ward", "publisher": "ACM"}, {"source": 8, "target": 23, "value": 6, "author": "Tomas Ward", "author_short": "T. Ward", "publisher": "Springer"}, {"source": 15, "target": 22, "value": 6, "author": "Wynita Griggs", "author_short": "W. Griggs", "publisher": "Elsevier"}, {"source": 3, "target": 25, "value": 5, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "Wiley"}, {"source": 6, "target": 22, "value": 5, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "Elsevier"}, {"source": 1, "target": 22, "value": 5, "author": "David Malone", "author_short": "D. Malone", "publisher": "Elsevier"}, {"source": 9, "target": 27, "value": 5, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "Zenodo"}, {"source": 10, "target": 25, "value": 5, "author": "James F. Power", "author_short": "J. Power", "publisher": "Wiley"}, {"source": 11, "target": 22, "value": 5, "author": "Peter Wellstead", "author_short": "P. Wellstead", "publisher": "Elsevier"}, {"source": 11, "target": 20, "value": 5, "author": "Peter Wellstead", "author_short": "P. Wellstead", "publisher": "IEEE"}, {"source": 18, "target": 20, "value": 5, "author": "Selim Solmaz", "author_short": "S. Solmaz", "publisher": "IEEE"}, {"source": 3, "target": 30, "value": 4, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "Nature"}, {"source": 3, "target": 29, "value": 4, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "PLOS"}, {"source": 6, "target": 25, "value": 4, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "Wiley"}, {"source": 19, "target": 23, "value": 4, "author": "Damien Woods", "author_short": "D. Woods", "publisher": "Springer"}, {"source": 1, "target": 28, "value": 4, "author": "David Malone", "author_short": "D. Malone", "publisher": "MDPI"}, {"source": 7, "target": 22, "value": 4, "author": "Doug Leith", "author_short": "D. Leith", "publisher": "Elsevier"}, {"source": 4, "target": 23, "value": 4, "author": "Erivelton Nepomuceno", "author_short": "E. Nepomuceno", "publisher": "Springer"}, {"source": 0, "target": 30, "value": 4, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "Nature"}, {"source": 18, "target": 21, "value": 4, "author": "Selim Solmaz", "author_short": "S. Solmaz", "publisher": "Other / unlisted"}, {"source": 18, "target": 25, "value": 4, "author": "Selim Solmaz", "author_short": "S. Solmaz", "publisher": "Wiley"}, {"source": 8, "target": 22, "value": 4, "author": "Tomas Ward", "author_short": "T. Ward", "publisher": "Elsevier"}, {"source": 12, "target": 22, "value": 4, "author": "Vicenç Torra", "author_short": "V. Torra", "publisher": "Elsevier"}, {"source": 12, "target": 21, "value": 4, "author": "Vicenç Torra", "author_short": "V. Torra", "publisher": "Other / unlisted"}, {"source": 3, "target": 20, "value": 3, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "IEEE"}, {"source": 3, "target": 26, "value": 3, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "Taylor & Francis"}, {"source": 6, "target": 29, "value": 3, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "PLOS"}, {"source": 7, "target": 24, "value": 3, "author": "Doug Leith", "author_short": "D. Leith", "publisher": "ACM"}, {"source": 7, "target": 21, "value": 3, "author": "Doug Leith", "author_short": "D. Leith", "publisher": "Other / unlisted"}, {"source": 16, "target": 25, "value": 3, "author": "Fiona Lyddy", "author_short": "F. Lyddy", "publisher": "Wiley"}, {"source": 0, "target": 25, "value": 3, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "Wiley"}, {"source": 2, "target": 24, "value": 3, "author": "Robert Shorten", "author_short": "R. Shorten", "publisher": "ACM"}, {"source": 14, "target": 21, "value": 3, "author": "Subhrakanti Dey", "author_short": "S. Dey", "publisher": "Other / unlisted"}, {"source": 13, "target": 21, "value": 3, "author": "Vijay Subramanian", "author_short": "V. Subramanian", "publisher": "Other / unlisted"}, {"source": 13, "target": 23, "value": 3, "author": "Vijay Subramanian", "author_short": "V. Subramanian", "publisher": "Springer"}, {"source": 15, "target": 21, "value": 3, "author": "Wynita Griggs", "author_short": "W. Griggs", "publisher": "Other / unlisted"}, {"source": 3, "target": 28, "value": 2, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "MDPI"}, {"source": 17, "target": 25, "value": 2, "author": "Arman Farhang", "author_short": "A. Farhang", "publisher": "Wiley"}, {"source": 9, "target": 30, "value": 2, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "Nature"}, {"source": 9, "target": 26, "value": 2, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "Taylor & Francis"}, {"source": 10, "target": 20, "value": 2, "author": "James F. Power", "author_short": "J. Power", "publisher": "IEEE"}, {"source": 10, "target": 27, "value": 2, "author": "James F. Power", "author_short": "J. Power", "publisher": "Zenodo"}, {"source": 0, "target": 29, "value": 2, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "PLOS"}, {"source": 5, "target": 25, "value": 2, "author": "Oliver Mason", "author_short": "O. Mason", "publisher": "Wiley"}, {"source": 18, "target": 22, "value": 2, "author": "Selim Solmaz", "author_short": "S. Solmaz", "publisher": "Elsevier"}, {"source": 15, "target": 26, "value": 2, "author": "Wynita Griggs", "author_short": "W. Griggs", "publisher": "Taylor & Francis"}, {"source": 3, "target": 24, "value": 1, "author": "Andrew Parnell", "author_short": "A. Parnell", "publisher": "ACM"}, {"source": 17, "target": 21, "value": 1, "author": "Arman Farhang", "author_short": "A. Farhang", "publisher": "Other / unlisted"}, {"source": 6, "target": 26, "value": 1, "author": "Barak Pearlmutter", "author_short": "B. Pearlmutter", "publisher": "Taylor & Francis"}, {"source": 19, "target": 24, "value": 1, "author": "Damien Woods", "author_short": "D. Woods", "publisher": "ACM"}, {"source": 19, "target": 22, "value": 1, "author": "Damien Woods", "author_short": "D. Woods", "publisher": "Elsevier"}, {"source": 19, "target": 30, "value": 1, "author": "Damien Woods", "author_short": "D. Woods", "publisher": "Nature"}, {"source": 19, "target": 27, "value": 1, "author": "Damien Woods", "author_short": "D. Woods", "publisher": "Zenodo"}, {"source": 1, "target": 29, "value": 1, "author": "David Malone", "author_short": "D. Malone", "publisher": "PLOS"}, {"source": 7, "target": 26, "value": 1, "author": "Doug Leith", "author_short": "D. Leith", "publisher": "Taylor & Francis"}, {"source": 9, "target": 29, "value": 1, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "PLOS"}, {"source": 9, "target": 23, "value": 1, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "Springer"}, {"source": 9, "target": 25, "value": 1, "author": "Elisa Fadda", "author_short": "E. Fadda", "publisher": "Wiley"}, {"source": 16, "target": 22, "value": 1, "author": "Fiona Lyddy", "author_short": "F. Lyddy", "publisher": "Elsevier"}, {"source": 0, "target": 24, "value": 1, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "ACM"}, {"source": 0, "target": 26, "value": 1, "author": "Ken Duffy", "author_short": "K. Duffy", "publisher": "Taylor & Francis"}, {"source": 5, "target": 26, "value": 1, "author": "Oliver Mason", "author_short": "O. Mason", "publisher": "Taylor & Francis"}, {"source": 11, "target": 29, "value": 1, "author": "Peter Wellstead", "author_short": "P. Wellstead", "publisher": "PLOS"}, {"source": 18, "target": 26, "value": 1, "author": "Selim Solmaz", "author_short": "S. Solmaz", "publisher": "Taylor & Francis"}, {"source": 14, "target": 23, "value": 1, "author": "Subhrakanti Dey", "author_short": "S. Dey", "publisher": "Springer"}, {"source": 8, "target": 29, "value": 1, "author": "Tomas Ward", "author_short": "T. Ward", "publisher": "PLOS"}, {"source": 8, "target": 26, "value": 1, "author": "Tomas Ward", "author_short": "T. Ward", "publisher": "Taylor & Francis"}, {"source": 12, "target": 28, "value": 1, "author": "Vicenç Torra", "author_short": "V. Torra", "publisher": "MDPI"}, {"source": 12, "target": 25, "value": 1, "author": "Vicenç Torra", "author_short": "V. Torra", "publisher": "Wiley"}, {"source": 15, "target": 23, "value": 1, "author": "Wynita Griggs", "author_short": "W. Griggs", "publisher": "Springer"}]};
+    const width = 1120;
+    const height = 900;
+    const margin = { top: 18, right: 170, bottom: 18, left: 120 };
 
+    const svg = d3.select("#chart");
+    const panel = document.getElementById("panel");
+    const tooltip = document.getElementById("tooltip");
+    const legend = d3.select("#legend");
+    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const sankey = d3.sankey()
+      .nodeId(d => d.index)
+      .nodeAlign(d3.sankeyLeft)
+      .nodeWidth(16)
+      .nodePadding(12)
+      .extent([[0, 0], [width - margin.left - margin.right, height - margin.top - margin.bottom]]);
+
+    const graph = sankey({
+      nodes: DATA.nodes.map(d => Object.assign({}, d)),
+      links: DATA.links.map(d => Object.assign({}, d))
+    });
+
+    const linked = new Map();
+    graph.links.forEach(link => {
+      if (!linked.has(link.source.index)) linked.set(link.source.index, new Set());
+      if (!linked.has(link.target.index)) linked.set(link.target.index, new Set());
+      linked.get(link.source.index).add(link.index);
+      linked.get(link.target.index).add(link.index);
+    });
+
+    function showTooltip(event, html) {
+      tooltip.innerHTML = html;
+      tooltip.style.opacity = 1;
+      const rect = panel.getBoundingClientRect();
+      let x = event.clientX - rect.left + 14;
+      let y = event.clientY - rect.top + 14;
+      const maxX = rect.width - tooltip.offsetWidth - 8;
+      const maxY = rect.height - tooltip.offsetHeight - 8;
+      tooltip.style.left = Math.min(x, maxX) + "px";
+      tooltip.style.top = Math.min(y, maxY) + "px";
+    }
+
+    function hideTooltip() {
+      tooltip.style.opacity = 0;
+    }
+
+    function highlightNode(node) {
+      const linkIds = linked.get(node.index) || new Set();
+      d3.selectAll(".link")
+        .classed("dim", d => !linkIds.has(d.index))
+        .classed("active", d => linkIds.has(d.index));
+      d3.selectAll(".node")
+        .classed("dim", d => d.index !== node.index && !linkIds.has(d.index));
+    }
+
+    function highlightLink(link) {
+      d3.selectAll(".link")
+        .classed("dim", d => d.index !== link.index)
+        .classed("active", d => d.index === link.index);
+      d3.selectAll(".node")
+        .classed("dim", d => d.index !== link.source.index && d.index !== link.target.index);
+    }
+
+    function resetHighlight() {
+      d3.selectAll(".link").classed("dim", false).classed("active", false);
+      d3.selectAll(".node").classed("dim", false);
+      hideTooltip();
+    }
+
+    const link = g.append("g")
+      .attr("fill", "none")
+      .selectAll("path")
+      .data(graph.links)
+      .join("path")
+      .attr("class", "link")
+      .attr("d", d3.sankeyLinkHorizontal())
+      .attr("stroke", d => d.source.color)
+      .attr("stroke-width", d => Math.max(1.5, d.width))
+      .on("mousemove", (event, d) => {
+        highlightLink(d);
+        showTooltip(
+          event,
+          `<strong>${d.author_short} → ${d.publisher}</strong>` +
+          `${d.value} paper${d.value === 1 ? "" : "s"}<br>` +
+          `<span style="opacity:.85">${d.author}</span>`
+        );
+      })
+      .on("mouseleave", resetHighlight);
+
+    const node = g.append("g")
+      .selectAll("g")
+      .data(graph.nodes)
+      .join("g")
+      .attr("class", "node")
+      .on("mousemove", (event, d) => {
+        highlightNode(d);
+        const detail = d.category === "author"
+          ? `${d.full}<br>${d.papers} papers in corpus`
+          : `${d.full}<br>${d.papers} papers from selected authors`;
+        showTooltip(event, `<strong>${d.name}</strong>${detail}`);
+      })
+      .on("mouseleave", resetHighlight);
+
+    node.append("rect")
+      .attr("x", d => d.x0)
+      .attr("y", d => d.y0)
+      .attr("height", d => Math.max(1, d.y1 - d.y0))
+      .attr("width", d => d.x1 - d.x0)
+      .attr("fill", d => d.color)
+      .attr("rx", 2);
+
+    node.append("text")
+      .attr("class", "node-label")
+      .attr("x", d => d.category === "author" ? d.x0 - 8 : d.x1 + 8)
+      .attr("y", d => (d.y0 + d.y1) / 2)
+      .attr("dy", "0.35em")
+      .attr("text-anchor", d => d.category === "author" ? "end" : "start")
+      .text(d => d.name);
+
+    function addLegend(title, items) {
+      const block = legend.append("div").attr("class", "legend-block");
+      block.append("div").attr("class", "legend-title").text(title);
+      items.forEach(item => {
+        block.append("span").attr("class", "legend-item").html(
+          `<span class="swatch" style="background:${item.color}"></span>${item.name}`
+        );
+      });
+    }
+
+    addLegend("Authors", DATA.nodes.filter(d => d.category === "author").map(d => ({
+      name: d.name, color: d.color
+    })));
+    addLegend("Publishers", DATA.nodes.filter(d => d.category === "publisher").map(d => ({
+      name: d.name, color: d.color
+    })));
+  </script>
+</body>
+</html>
