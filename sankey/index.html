@@ -41,7 +41,6 @@
     }
     #chart {
       width: 100%;
-      min-width: 920px;
       height: auto;
       display: block;
     }
@@ -130,6 +129,14 @@
     .node.dim text {
       opacity: 0.35;
     }
+    @media (max-width: 700px) {
+      .page { padding: 14px 10px 22px; }
+      h1 { font-size: 1.18rem; }
+      .subtitle, .hint { font-size: 0.82rem; }
+      .panel { padding: 6px; overflow: visible; }
+      .node-label { font-size: 22px; }
+      #tooltip { font-size: 12px; max-width: min(280px, 82vw); }
+    }
   </style>
 </head>
 <body>
@@ -141,7 +148,7 @@
            aria-label="Sankey diagram linking Hamilton authors to publishers"></svg>
       <div id="tooltip"></div>
     </div>
-    <p class="hint">Hover a flow or node to highlight that author&ndash;publisher link. Flow width = number of papers.</p>
+    <p class="hint">Tap or hover a flow or name to highlight that author&ndash;publisher link. Flow width = number of papers.</p>
     <div class="legend" id="legend"></div>
   </div>
   <script>
@@ -215,6 +222,9 @@
       hideTooltip();
     }
 
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    let sticky = null;
+
     const link = g.append("g")
       .attr("fill", "none")
       .selectAll("path")
@@ -224,7 +234,9 @@
       .attr("d", d3.sankeyLinkHorizontal())
       .attr("stroke", d => d.source.color)
       .attr("stroke-width", d => Math.max(1.5, d.width))
-      .on("mousemove", (event, d) => {
+      .style("cursor", "pointer")
+      .on("pointermove", (event, d) => {
+        if (coarse) return;
         highlightLink(d);
         showTooltip(
           event,
@@ -233,21 +245,48 @@
           `<span style="opacity:.85">${d.author}</span>`
         );
       })
-      .on("mouseleave", resetHighlight);
+      .on("pointerleave", () => { if (!coarse) resetHighlight(); })
+      .on("pointerup", (event, d) => {
+        if (!coarse) return;
+        event.stopPropagation();
+        const key = "l" + d.index;
+        if (sticky === key) { resetHighlight(); sticky = null; return; }
+        sticky = key;
+        highlightLink(d);
+        showTooltip(
+          event,
+          `<strong>${d.author_short} → ${d.publisher}</strong>` +
+          `${d.value} paper${d.value === 1 ? "" : "s"}<br>` +
+          `<span style="opacity:.85">${d.author}</span>`
+        );
+      });
 
     const node = g.append("g")
       .selectAll("g")
       .data(graph.nodes)
       .join("g")
       .attr("class", "node")
-      .on("mousemove", (event, d) => {
+      .on("pointermove", (event, d) => {
+        if (coarse) return;
         highlightNode(d);
         const detail = d.category === "author"
           ? `${d.full}<br>${d.papers} papers in corpus`
           : `${d.full}<br>${d.papers} papers from selected authors`;
         showTooltip(event, `<strong>${d.name}</strong>${detail}`);
       })
-      .on("mouseleave", resetHighlight);
+      .on("pointerleave", () => { if (!coarse) resetHighlight(); })
+      .on("pointerup", (event, d) => {
+        if (!coarse) return;
+        event.stopPropagation();
+        const key = "n" + d.index;
+        if (sticky === key) { resetHighlight(); sticky = null; return; }
+        sticky = key;
+        highlightNode(d);
+        const detail = d.category === "author"
+          ? `${d.full}<br>${d.papers} papers in corpus`
+          : `${d.full}<br>${d.papers} papers from selected authors`;
+        showTooltip(event, `<strong>${d.name}</strong>${detail}`);
+      });
 
     node.append("rect")
       .attr("x", d => d.x0)
@@ -281,6 +320,13 @@
     addLegend("Publishers", DATA.nodes.filter(d => d.category === "publisher").map(d => ({
       name: d.name, color: d.color
     })));
+
+    document.addEventListener("pointerup", (event) => {
+      if (!coarse || !sticky) return;
+      if (panel.contains(event.target)) return;
+      resetHighlight();
+      sticky = null;
+    });
   </script>
 </body>
 </html>
